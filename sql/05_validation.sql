@@ -1,0 +1,5 @@
+-- ============================================================
+-- Milestone: 05_validation.sql
+-- TODO: isi sesuai tujuan milestone di docs/roadmap.md
+-- Depends on: (isi setelah tau urutan dependency)
+-- ============================================================

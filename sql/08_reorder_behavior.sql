@@ -1,0 +1,5 @@
+-- ============================================================
+-- Milestone: 08_reorder_behavior.sql
+-- TODO: isi sesuai tujuan milestone di docs/roadmap.md
+-- Depends on: (isi setelah tau urutan dependency)
+-- ============================================================

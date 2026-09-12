@@ -1,0 +1,5 @@
+-- ============================================================
+-- Milestone: 04_cleaning.sql
+-- TODO: isi sesuai tujuan milestone di docs/roadmap.md
+-- Depends on: (isi setelah tau urutan dependency)
+-- ============================================================
