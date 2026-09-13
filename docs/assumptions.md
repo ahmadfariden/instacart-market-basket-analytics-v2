@@ -10,6 +10,30 @@
 | aisles | 134 |
 | departments | 21 |
 
+## Reorder & Behavior Analysis Findings (Milestone 8)
+
+**Product purchase count distribution — used to validate ranking threshold**
+- min 1, P25 17, median 60, P75 260, P90 1023, max 472,565 (across 49,677 products)
+- Products below 20 purchases: 13,755 (27.69%)
+- **Decision: threshold 20 purchases CONFIRMED/LOCKED** — close to natural P25 (17), not an
+  arbitrary cutoff. Products below threshold remain in raw data, only excluded from ranking
+  visuals (same "analytical rule, not data cleaning" principle as Retail Rocket).
+
+**Reorder funnel (first purchase → reorder once → loyal repeat 3x+)**
+- 13,307,953 total first purchases → 40.02% reorder at least once → of those, 58.6% become
+  loyal repeat buyers (3+ total purchases)
+- By department: produce highest first-to-reorder (48.16%), pantry lowest (23.09%) —
+  consistent with the consumable-vs-durable pattern seen in milestone 7's reorder rate findings
+
+**Top Product Pairs — performance note**
+- Full self-join across all 33.8M order-product rows was combinatorially explosive
+  (estimated >1 hour runtime, 10GB+ RAM) — cancelled and re-scoped
+- **Revised approach: co-occurrence analysis limited to top 200 most-purchased products**
+  before self-join, since long-tail product pairs add computational cost without meaningful
+  cross-sell insight. Runtime dropped from 1+ hour to seconds.
+- Top pairs dominated by fresh produce (bananas, avocado, strawberries, spinach) — consistent
+  with realistic grocery basket composition, not spurious
+
 ## EDA Findings (Milestone 7)
 
 **Reorder rate**
