@@ -10,6 +10,39 @@
 | aisles | 134 |
 | departments | 21 |
 
+## EDA Findings (Milestone 7)
+
+**Reorder rate**
+- Overall: 59.01% (33,819,106 order-product rows, 19,955,360 reordered)
+- Highest by department: dairy eggs (67.02%), beverages (65.37%), produce (65.05%) —
+  consumable/habitual items, expected to reorder frequently
+- Lowest by department: personal care (32.19%), pantry (34.74%), international (36.97%) —
+  longer product life or exploratory purchases, expected lower reorder
+- Highest by aisle: milk (78.18%), water/seltzer (72.99%), fresh fruits (71.88%)
+
+**Time patterns**
+- Order volume by hour: clear "business hours" pattern — rises sharply from hour 7,
+  peaks hour 9-15, drops sharply after hour 17. Very different from Retail Rocket's
+  overnight-heavy pattern (different domain: grocery vs general e-commerce)
+- Order volume by day-of-week: dow=0 highest (600,905), fairly even distribution overall
+  (no single day dominates dramatically)
+
+**⚠️ CRITICAL: `days_since_prior_order` = 30 is a CAPPED VALUE, not a natural pattern**
+- Days 25-29 show a smooth declining trend (19,234 → 19,016 → 22,013 → 26,777 → 19,191)
+- Day 30 jumps to 369,323 — a 14-19x spike relative to neighboring values, inconsistent
+  with the gradual decline seen elsewhere in the distribution
+- **This confirms `days_since_prior_order` is capped at 30 by the dataset itself** — orders
+  with an actual gap >30 days are all recorded as exactly 30, not their true value
+- **Implication for insights: NEVER claim "X% of customers shop on a ~30-day cycle" from
+  this spike.** The 30-day bucket is an artifact mixing all long-gap customers together
+  (could be 31 days or 200 days — indistinguishable in this dataset), not evidence of a
+  genuine monthly shopping habit.
+- By contrast, the day=7 spike (320,608, ~33-77% above neighbors 6 and 8) is NOT capped
+  (data continues naturally past day 7 up to 30) — this is plausibly a genuine weekly
+  shopping cycle signal and CAN be discussed as a real behavioral pattern.
+- Day=14 shows a similar, more modest genuine spike (100,230 vs neighbors 83,214 and
+  66,579) — plausible bi-weekly cycle, also not capped.
+
 ## Data Profiling Findings (Milestone 3)
 
 **Missing values — VALIDATED as expected business process, not data quality issue**
