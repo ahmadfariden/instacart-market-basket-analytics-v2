@@ -10,6 +10,29 @@
 | aisles | 134 |
 | departments | 21 |
 
+## Customer Segmentation Findings (Milestone 9)
+
+**Dataset characteristic — important context for interpreting segments**
+- `min_orders = 4` across all users — this Instacart dataset is pre-filtered to only include
+  users with at least 4 orders (a known characteristic of the public dataset release)
+- **Implication: "Occasional" segment does NOT mean "rarely shops" in absolute terms** — it
+  means "least frequent among users who already passed the 4+ order inclusion criteria."
+  Must be stated explicitly in the dashboard/documentation to avoid misleading interpretation.
+
+**Segmentation thresholds — LOCKED (percentile-based, not arbitrary)**
+- Distribution: min 4, P33=7, median=10, P66=15, max=100 (n=206,209 users)
+- Occasional: total_orders ≤ 7 (35.69%, 73,591 users)
+- Regular: total_orders 8-15 (30.42%, 62,729 users)
+- Frequent Buyer: total_orders > 15 (33.89%, 69,889 users)
+- **Reconciliation: PASSED** — 73,591 + 62,729 + 69,889 = 206,209 (exact match to total users)
+
+**Behavioral differences across segments**
+- Avg basket size: fairly similar across segments (Occasional 9.67, Regular 9.97, Frequent
+  Buyer 10.23) — NOT a strong differentiator
+- **Avg reorder rate: strongly differentiated** — Occasional 26.22%, Regular 42.64%, Frequent
+  Buyer 61.65%. This is the key behavioral signal: frequent buyers aren't just shopping more
+  often, they're substantially more loyal/predictable in what they buy, not just how much.
+
 ## Reorder & Behavior Analysis Findings (Milestone 8)
 
 **Product purchase count distribution — used to validate ranking threshold**
