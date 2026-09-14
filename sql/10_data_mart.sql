@@ -37,6 +37,27 @@ COPY mart_reorder_by_department TO 'data/processed/mart_reorder_by_department.pa
 
 
 -- ============================================================
+-- MART 2b: mart_reorder_by_aisle -> Halaman 3 (Product & Aisle Performance)
+-- PENTING: dibuat karena dashboard chart "Aisle Reorder Rate" sebelumnya salah --
+-- pakai Average(reorder_rate_pct) dari mart_product_performance (data per-produk,
+-- sudah di-threshold >=20 purchases), bukan weighted rate dari SEMUA baris pembelian
+-- di aisle itu. Ini mart yang benar, metodologi sama persis dengan mart_reorder_by_department.
+-- ============================================================
+CREATE OR REPLACE TABLE mart_reorder_by_aisle AS
+SELECT
+    dp.aisle,
+    COUNT(*) AS n_order_product_rows,
+    SUM(fop.reordered) AS n_reordered,
+    ROUND(100.0 * SUM(fop.reordered) / COUNT(*), 2) AS reorder_rate_pct
+FROM fact_order_products fop
+JOIN dim_product dp ON fop.product_id = dp.product_id
+GROUP BY dp.aisle
+ORDER BY reorder_rate_pct DESC;
+
+COPY mart_reorder_by_aisle TO 'data/processed/mart_reorder_by_aisle.parquet' (FORMAT PARQUET);
+
+
+-- ============================================================
 -- MART 3: mart_reorder_funnel -> Halaman 2 (Reorder & Behavior)
 -- ============================================================
 CREATE OR REPLACE TABLE mart_reorder_funnel AS
@@ -67,24 +88,49 @@ COPY mart_reorder_funnel TO 'data/processed/mart_reorder_funnel.parquet' (FORMAT
 -- MART 4: mart_product_performance -> Halaman 3 (Product & Aisle Performance)
 -- LOCKED threshold: minimum 20 purchases (dekat P25 alami = 17)
 -- ============================================================
+
+-- Investigasi tambahan: threshold 20 ternyata masih terlalu rentan small-sample bias untuk
+-- RANKING (rate tinggi kebetulan gampang muncul di n kecil). Cek dulu berapa produk tersisa
+-- di threshold 50 vs 100 sebelum kunci threshold ranking yang terpisah dari threshold data.
+SELECT
+    COUNT(*) FILTER (WHERE n_purchases >= 50) AS products_above_50,
+    COUNT(*) FILTER (WHERE n_purchases >= 100) AS products_above_100,
+    COUNT(*) AS total_products_checked
+FROM (
+    SELECT product_id, COUNT(*) AS n_purchases
+    FROM fact_order_products
+    WHERE source_set = 'prior'
+    GROUP BY product_id
+);
+
 CREATE OR REPLACE TABLE mart_product_performance AS
 WITH product_stats AS (
     SELECT product_id, COUNT(*) AS n_purchases, SUM(reordered) AS n_reordered
     FROM fact_order_products
     WHERE source_set = 'prior'
     GROUP BY product_id
+),
+ranked AS (
+    SELECT
+        dp.product_id,
+        dp.product_name,
+        dp.aisle,
+        dp.department,
+        ps.n_purchases,
+        ps.n_reordered,
+        ROUND(100.0 * ps.n_reordered / ps.n_purchases, 2) AS reorder_rate_pct
+    FROM product_stats ps
+    JOIN dim_product dp ON ps.product_id = dp.product_id
+    WHERE ps.n_purchases >= 20  -- threshold DATA (dipakai untuk mart secara keseluruhan)
 )
 SELECT
-    dp.product_id,
-    dp.product_name,
-    dp.aisle,
-    dp.department,
-    ps.n_purchases,
-    ps.n_reordered,
-    ROUND(100.0 * ps.n_reordered / ps.n_purchases, 2) AS reorder_rate_pct
-FROM product_stats ps
-JOIN dim_product dp ON ps.product_id = dp.product_id
-WHERE ps.n_purchases >= 20;  -- LOCKED threshold
+    *,
+    -- ranking_eligible: LOCKED, threshold TERPISAH khusus untuk ranking/ordering (bukan
+    -- untuk exclude dari mart). Alasan: produk n<100 pembelian terlalu rentan tampil
+    -- "reorder rate ekstrem" secara kebetulan (small-sample bias), bukan bukti performa asli.
+    CASE WHEN n_purchases >= 100 THEN 1 ELSE 0 END AS ranking_eligible,
+    ROW_NUMBER() OVER (ORDER BY reorder_rate_pct DESC, n_purchases DESC) AS sort_rank
+FROM ranked;
 
 COPY mart_product_performance TO 'data/processed/mart_product_performance.parquet' (FORMAT PARQUET);
 
